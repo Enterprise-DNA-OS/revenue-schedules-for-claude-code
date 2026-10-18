@@ -1,0 +1,72 @@
+import assert from 'node:assert/strict';
+import {mkdtempSync,rmSync,readFileSync,writeFileSync,readdirSync} from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {getDb,REPO_ROOT} from './lib/db.mjs';
+import {migrate} from './migrate.mjs';
+import {seed} from './seed.mjs';
+import {reads,read,resolve,insert,transaction,workflow} from './lib/domain.mjs';
+import {importLeapfin} from './lib/import.mjs';
+import {parseCsv} from './lib/csv.mjs';
+let checks=0;const eq=(a,b)=>{assert.deepEqual(a,b);checks++;},ok=(v,m)=>{assert.ok(v,m);checks++;};
+async function rejects(fn,re){await assert.rejects(fn,re);checks++;}
+const tmp=mkdtempSync(path.join(os.tmpdir(),'revenue test '));
+process.env.DATABASE_URL='';process.env.DATA_DIR=path.join(tmp,'db');process.env.OUTPUT_DIR=tmp;
+let db;
+function cli(args,{fail=false,json=true}={}){const c=spawnSync(process.execPath,['scripts/revenue.mjs',...args,...(json?['--json']:[])],{cwd:REPO_ROOT,env:process.env,encoding:'utf8'});if(fail){eq(c.status,1);return c.stderr;}if(c.status!==0)throw Error(args.join(' ')+': '+c.stderr);checks++;return json?JSON.parse(c.stdout):c.stdout;}
+try{
+ db=await getDb();eq((await migrate(db)).ran.length,1);eq((await migrate(db)).ran.length,0);await seed(db);
+ const n=(await db.query('select count(*)::int n from audit_log'))[0].n;await seed(db);eq((await db.query('select count(*)::int n from audit_log'))[0].n,n);
+ eq((await read(db,'compliance')).length,4);for(const q of await read(db,'insights'))ok(q.rows.length>0,q.question);
+ eq((await resolve(db,'contracts','coASTAL')).source_id,'con3');await rejects(()=>resolve(db,'contracts','Harbour'),/Ambiguous/);
+ const c=await resolve(db,'contracts','con1');eq((await resolve(db,'contracts',c.id)).source_id,'con1');
+ const allocation=await db.query('select obligation_id,sum(scheduled_cents)::bigint cents from v_schedule group by obligation_id');for(const a of allocation){const o=(await db.query('select amount_cents from obligations where id=$1',[a.obligation_id]))[0];eq(a.cents,o.amount_cents);}
+ const contract={source_id:'rounding',name:'Rounding across leap day',customer:'Test',owner:'Tester',currency:'NZD',amount_cents:100,starts_on:'2024-02-28',ends_on:'2024-03-02',jurisdiction:'NZ',review_on:'2099-01-01',retention_basis_on:'2025-03-31',retain_until:'2032-03-31'};
+ const rounding=await transaction(db,()=>insert(db,'contracts',contract));eq((await resolve(db,'contracts',rounding.id.slice(0,8))).source_id,'rounding');await transaction(db,()=>insert(db,'obligations',{source_id:'rounding-ob','name':'Four day service',contract_id:'rounding',amount_cents:100,method:'daily',starts_on:'2024-02-28',ends_on:'2024-03-02',basis:'Even daily service',evidence:'Test agreement'}));
+ eq((await db.query("select scheduled_cents from v_schedule where source_id='rounding-ob' order by month")).map(x=>Number(x.scheduled_cents)),[50,50]);
+ await rejects(()=>transaction(db,()=>insert(db,'contracts',{...contract,source_id:'bad',starts_on:'2026-02-30'})),/real YYYY/);
+ await rejects(()=>transaction(db,()=>insert(db,'contracts',{...contract,source_id:'bad',amount_cents:1.2})),/integer cents/);
+ await rejects(()=>transaction(db,()=>workflow(db,'approve-contract','con3',{evidence:'Reviewed',basis:'Draft allocation'})),/Allocation must equal/);
+ await rejects(()=>transaction(db,()=>insert(db,'obligations',{source_id:'invalid',name:'Out of dates',contract_id:'con3',amount_cents:1,method:'daily',starts_on:'2020-01-01',ends_on:'2020-01-02',basis:'test',evidence:'test'})),/outside contract dates/);
+ await rejects(()=>transaction(db,()=>db.query("update obligations set amount_cents=1 where source_id='obl1'")),/immutable/);
+ await rejects(()=>transaction(db,()=>db.query("update contracts set currency='USD' where source_id='con1'")),/immutable/);
+ const file=path.join(REPO_ROOT,'examples/leapfin/records.csv');let im=await importLeapfin(db,file,{source:'sample',dry:true});eq(im.inserted,2);eq((await db.query("select count(*)::int n from source_records where source='sample'"))[0].n,0);
+ im=await importLeapfin(db,file,{source:'sample'});eq(im.inserted,2);eq((await importLeapfin(db,file,{source:'sample'})).unchanged,2);
+ const bad=path.join(tmp,'bad.csv');writeFileSync(bad,readFileSync(file,'utf8').replace('1200.00','1201.00'));await rejects(()=>importLeapfin(db,bad,{source:'sample'}),/Source record changed/);
+ writeFileSync(bad,'objectType,id,amount,currencyCode\nline-item,new-valid,12.50,NZD\nrefund,no,5.00,NZD\n');await rejects(()=>importLeapfin(db,bad,{source:'rollback'}),/Only contract/);eq((await db.query("select count(*)::int n from source_records where source='rollback'"))[0].n,0);
+ const native=path.join(tmp,'native.json');writeFileSync(native,JSON.stringify([{objectType:'line-item',id:'native',amount:10.01,currencyCode:'AUD',links:[{objectType:'invoice',id:'inv1'}],customFields:{tag:'keep'}}]));eq((await importLeapfin(db,native,{source:'json'})).inserted,1);eq((await db.query("select payload from source_records where external_id='native'"))[0].payload.links[0].id,'inv1');
+ const mapped=path.join(tmp,'mapped.csv');writeFileSync(mapped,'Type,External ID,Amount,Currency\nline-item,mapped,5.50,NZD\n');eq((await importLeapfin(db,mapped,{source:'mapped',mapping:{Type:'objectType','External ID':'id',Amount:'amount',Currency:'currencyCode'}})).inserted,1);
+ await rejects(()=>importLeapfin(db,file,{}),/source/);
+ await rejects(()=>transaction(db,()=>db.query("delete from source_records where external_id='native'")),/append-only/);
+ eq(parseCsv('\ufeffA,B\r\n"one,two","said ""yes""\nnext"\r\n')[0],{A:'one,two',B:'said "yes"\nnext'});
+ assert.throws(()=>parseCsv('A,A\n1,2'),/unique/);checks++;assert.throws(()=>parseCsv('A,B\n1'),/expected/);checks++;
+ await db.exec('create role smoke_reader;grant usage on schema public to smoke_reader;set role smoke_reader');await rejects(()=>db.query('select * from contracts'),/permission denied/);await rejects(()=>db.query('select * from v_schedule'),/permission denied/);await db.exec('reset role');
+ const oldest=(await db.query("select min(month)::text as month from v_schedule where source_id='obl1'"))[0].month;
+ const last=(await db.query("select (date_trunc('month',current_date)-interval '1 month')::date::text as month"))[0].month;
+ await rejects(()=>transaction(db,()=>workflow(db,'record-period',last,{evidence:'Reviewed'})),/Draft contracts/);
+ const prior=(await db.query('select count(*)::int n from recognitions'))[0].n;
+ await rejects(()=>transaction(db,()=>workflow(db,'record-period','2099-01-01',{evidence:'Not occurred'})),/completed months/);eq((await db.query('select count(*)::int n from recognitions'))[0].n,prior);
+ await rejects(()=>transaction(db,()=>workflow(db,'lock-period',oldest,{evidence:'Not reviewed'})),/unreviewed/);
+ await db.close();db=null;
+ for(const cmd of [...Object.keys(reads),'weekly-review','insights'])ok(cli([cmd]),cmd);
+ ok(cli(['help'],{json:false}).includes('recognition-due'));ok(cli(['attention'],{json:false}).includes('overdue'));
+ eq(cli(['contract','con1']).contract.source_id,'con1');ok(cli(['contract','Harbour'],{fail:true}).includes('Ambiguous'));
+ ok(cli(['attention','--nonsense'],{fail:true}).includes('Unknown flag'));ok(cli(['attention','extra'],{fail:true}).includes('Wrong arguments'));ok(cli(['attention','--json=false'],{fail:true,json:false}).includes('Invalid value'));ok(cli(['bad-command'],{fail:true}).includes('Unknown command'));
+ const add=path.join(tmp,'note.json');writeFileSync(add,JSON.stringify({source_id:'new-note',name:'Reviewed contract',contract_id:'con1',summary:'Evidence checked',owner:'Tester'}));eq(cli(['add','notes','--file='+add,'--actor=smoke']).source_id,'new-note');
+ eq(cli(['log','con1','--text=Source amounts reconciled','--actor=smoke']).summary,'Source amounts reconciled');
+ eq(cli(['approve-contract','rounding','--basis=Even daily fixed allocation','--evidence=Signed agreement','--actor=smoke']).status,'approved');
+ const recorded=cli(['record-period',oldest,'--evidence=Monthly service delivered; ledger reconciliation reviewed','--actor=smoke']);ok(recorded.length>0);const rec=recorded[0];
+ eq(cli(['void-recognition',rec.source_id,'--evidence=Correcting review evidence','--actor=smoke']).status,'void');ok(cli(['void-recognition',rec.source_id,'--evidence=Again'],{fail:true}).includes('already void'));
+ const replacement=cli(['record-period',oldest,'--evidence=Corrected evidence checked','--actor=smoke']);eq(replacement.length,1);eq(cli(['lock-period',oldest,'--evidence=Month reconciled','--actor=smoke']).status,'locked');
+ ok(cli(['void-recognition',replacement[0].source_id,'--evidence=Attempt after lock'],{fail:true}).includes('locked'));ok(cli(['record-period',oldest,'--evidence=Again'],{fail:true}).includes('locked'));
+ eq(cli(['review-contract','con1','--next=2099-01-01','--evidence=Review completed']).review_on,'2099-01-01');eq(cli(['retain-evidence','con2','--until=2099-01-01','--evidence=Retention policy confirmed']).retain_until,'2099-01-01');
+ for(const [cmd,extra] of [['draft-weekly-review',[]],['draft-contract-memo',['con1']],['draft-recognition-review',[]]])ok(JSON.parse(readFileSync(cli([cmd,...extra]).file,'utf8')).status.startsWith('DRAFT'));
+ eq(cli(['import','leapfin',file,'--source=cli','--dry-run']).dry_run,true);eq(cli(['import','leapfin',file,'--source=cli']).inserted,2);
+ const exported=JSON.parse(readFileSync(cli(['export']).file,'utf8'));eq(exported.format,'revenue-schedules-v1');ok(exported.audit_log.some(r=>r.actor==='smoke'&&r.after_row));ok(exported.recognitions.some(r=>r.status==='void'));
+ db=await getDb();const blocked={...contract,source_id:'locked-add',starts_on:oldest,ends_on:oldest,retention_basis_on:oldest,retain_until:'2099-01-01'};await transaction(db,()=>insert(db,'contracts',blocked));await rejects(()=>transaction(db,()=>insert(db,'obligations',{source_id:'late',name:'Late change',contract_id:'locked-add',amount_cents:100,method:'point',starts_on:oldest,ends_on:oldest,basis:'test',evidence:'test'})),/locked period/);await db.close();db=null;
+ for(const s of ['view','docs']){const c=spawnSync(process.execPath,['scripts/'+s+'.mjs'],{cwd:REPO_ROOT,env:process.env,encoding:'utf8'});eq(c.status,0);}
+ ok(readFileSync(path.join(tmp,'views/attention.html'),'utf8').includes('Record checks'));ok(readdirSync(path.join(tmp,'docs-out/contract-memo')).length>=3);
+ const {table:htmlTable}=await import('./lib/render.mjs');ok(htmlTable([{name:'<script>alert(1)</script>'}]).includes('&lt;script&gt;'));
+ console.log('PASS '+checks+' checks: cent allocation, leap days, imports, rollback, locked periods, access, audit, every CLI route, documents and views.');
+}finally{if(db)await db.close();rmSync(tmp,{recursive:true,force:true});}

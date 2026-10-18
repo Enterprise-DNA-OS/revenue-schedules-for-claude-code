@@ -1,13 +1,40 @@
 [
   {
     "name": "week",
-    "title": "This week",
-    "subtitle": "Revenue Schedules for Claude Code: what needs attention, rendered by npm run view",
+    "title": "Revenue review this week",
     "sections": [
       {
-        "title": "Needs attention",
-        "note": "TODO(author): point this at the industry's attention view (overdue, stuck, quiet).",
-        "sql": "select 'replace me' as item, 'TODO(author)' as why"
+        "title": "Contract review",
+        "sql": "select source_id,name,owner,currency,amount_cents,allocated_cents,recorded_cents,status,review_on from v_contracts order by source_id"
+      },
+      {
+        "title": "Attention",
+        "sql": "select * from v_attention order by due_on,source_id"
+      }
+    ]
+  },
+  {
+    "name": "waterfall",
+    "title": "Revenue schedule by month",
+    "sections": [
+      {
+        "title": "Scheduled and reviewed revenue",
+        "sql": "select month,currency,contract_status,sum(scheduled_cents)::bigint as scheduled_cents,sum(recorded_cents)::bigint as recorded_cents,sum(pending_cents)::bigint as pending_cents from v_revenue_review group by month,currency,contract_status order by month,currency",
+        "note": "Currencies stay separate. Pending consideration is not a deferred revenue or cash balance."
+      }
+    ]
+  },
+  {
+    "name": "attention",
+    "title": "Review exceptions",
+    "sections": [
+      {
+        "title": "Work waiting",
+        "sql": "select * from v_attention order by due_on,source_id"
+      },
+      {
+        "title": "Record checks",
+        "sql": "select * from v_compliance order by source_id,rule"
       }
     ]
   }

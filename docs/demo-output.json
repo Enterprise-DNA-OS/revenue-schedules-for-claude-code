@@ -1,0 +1,24 @@
+{
+  "captured_at": "2026-10-18T02:57:26.271Z",
+  "data": "Fictional seed records",
+  "screens": [
+    {
+      "title": "Recognition review",
+      "ask": "Which completed months still need review?",
+      "command": "npm run revenue -- recognition-due",
+      "output": "source id  obligation      contract                 currency  month       pending  period status\n  ---------  --------------  -----------------------  --------  ----------  -------  -------------\n  obl1       Annual access   Harbour annual service   NZD       2026-08-01  1019.18  open         \n  obl1       Annual access   Harbour annual service   NZD       2026-09-01  986.30   open         \n  obl2       Setup handover  Harbour setup project    AUD       2026-09-01  3000.00  open         \n  obl3       Bundled access  Coastal bundled service  USD       2026-09-01  994.48   open"
+    },
+    {
+      "title": "Evidence checks",
+      "ask": "Which records need an accounting or retention check?",
+      "command": "npm run revenue -- compliance",
+      "output": "source id  rule           finding                                                                   \n  ---------  -------------  --------------------------------------------------------------------------\n  con1       POLICY-REVIEW  Internal policy review date is overdue                                    \n  con2       RECORDS-7Y     Retention date is less than seven years after the recorded retention basis\n  con3       IFRS15-22-73   Review performance obligations and allocation evidence                    \n  con3       POLICY-REVIEW  Internal policy review date is overdue"
+    },
+    {
+      "title": "Imported records",
+      "ask": "What came across from the source records?",
+      "command": "npm run revenue -- source-inbox",
+      "output": "source id                     name                    object type  currency  amount   starts on   ends on   \n  ----------------------------  ----------------------  -----------  --------  -------  ----------  ----------\n  demo:line-item:orphan         Unmapped setup line     line-item    NZD       100.00   2026-09-18  2026-10-17\n  sample:contract:contract-101  Example contract        contract     NZD       1200.00  2026-01-01  2026-12-31\n  sample:line-item:line-101     Example annual service  line-item    NZD       1200.00  2026-01-01  2026-12-31"
+    }
+  ]
+}

@@ -1,11 +1,51 @@
 [
   {
-    "name": "example",
-    "title": "TODO(author): the first document this industry must produce",
-    "for_each": "select gen_random_uuid() as id, 'Example' as name",
+    "name": "contract-memo",
+    "title": "Contract revenue assessment",
+    "for_each": "select id,name from contracts order by source_id",
     "file": "name",
     "sections": [
-      { "title": "Details", "sql": "select 'replace me' as item, $1::text as record_id" }
+      {
+        "title": "Consideration and approval",
+        "sql": "select source_id,customer,currency,amount_cents,status,basis,approval_evidence,approved_by from contracts where id=$1"
+      },
+      {
+        "title": "Obligations and evidence",
+        "sql": "select name,method,amount_cents,starts_on,ends_on,basis,evidence from obligations where contract_id=$1 order by source_id"
+      },
+      {
+        "title": "Review notes",
+        "sql": "select summary,owner,created_at from notes where contract_id=$1 order by created_at"
+      }
+    ]
+  },
+  {
+    "name": "revenue-schedule",
+    "title": "Revenue schedule and recognition review",
+    "for_each": "select id,name from contracts order by source_id",
+    "file": "name",
+    "sections": [
+      {
+        "title": "Monthly record",
+        "sql": "select obligation,currency,month,scheduled_cents,recorded_cents,pending_cents from v_revenue_review where contract_id=$1 order by month,source_id",
+        "note": "For accountant review. No journal is posted to another system."
+      }
+    ]
+  },
+  {
+    "name": "retention-record",
+    "title": "Evidence retention review",
+    "for_each": "select id,name from contracts order by source_id",
+    "file": "name",
+    "sections": [
+      {
+        "title": "Retention policy",
+        "sql": "select jurisdiction,retention_basis_on,retain_until,review_on from contracts where id=$1"
+      },
+      {
+        "title": "Recorded evidence",
+        "sql": "select name,basis,evidence from obligations where contract_id=$1 order by source_id"
+      }
     ]
   }
 ]

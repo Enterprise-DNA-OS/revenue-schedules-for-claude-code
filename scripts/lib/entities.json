@@ -1,0 +1,100 @@
+{
+  "contracts": {
+    "fields": [
+      "source_id",
+      "name",
+      "customer",
+      "owner",
+      "currency",
+      "amount_cents",
+      "starts_on",
+      "ends_on",
+      "jurisdiction",
+      "review_on",
+      "retention_basis_on",
+      "retain_until"
+    ],
+    "dates": [
+      "starts_on",
+      "ends_on",
+      "review_on",
+      "retention_basis_on",
+      "retain_until"
+    ],
+    "numbers": [
+      "amount_cents"
+    ],
+    "refs": {},
+    "required": [
+      "source_id",
+      "name",
+      "customer",
+      "owner",
+      "currency",
+      "amount_cents",
+      "starts_on",
+      "ends_on",
+      "jurisdiction",
+      "review_on",
+      "retention_basis_on",
+      "retain_until"
+    ]
+  },
+  "obligations": {
+    "fields": [
+      "source_id",
+      "name",
+      "contract_id",
+      "source_record_id",
+      "amount_cents",
+      "method",
+      "starts_on",
+      "ends_on",
+      "basis",
+      "evidence"
+    ],
+    "dates": [
+      "starts_on",
+      "ends_on"
+    ],
+    "numbers": [
+      "amount_cents"
+    ],
+    "refs": {
+      "contract_id": "contracts",
+      "source_record_id": "source_records"
+    },
+    "required": [
+      "source_id",
+      "name",
+      "contract_id",
+      "amount_cents",
+      "method",
+      "starts_on",
+      "ends_on",
+      "basis",
+      "evidence"
+    ]
+  },
+  "notes": {
+    "fields": [
+      "source_id",
+      "name",
+      "contract_id",
+      "summary",
+      "owner"
+    ],
+    "dates": [],
+    "numbers": [],
+    "refs": {
+      "contract_id": "contracts"
+    },
+    "required": [
+      "source_id",
+      "name",
+      "contract_id",
+      "summary",
+      "owner"
+    ]
+  }
+}

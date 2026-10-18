@@ -1,0 +1,14 @@
+{
+  "source_id": "example-contract",
+  "name": "Example annual service",
+  "customer": "Fictional customer",
+  "owner": "Alex",
+  "currency": "NZD",
+  "amount_cents": 120000,
+  "starts_on": "2026-01-01",
+  "ends_on": "2026-12-31",
+  "jurisdiction": "NZ",
+  "review_on": "2027-01-01",
+  "retention_basis_on": "2027-03-31",
+  "retain_until": "2034-03-31"
+}

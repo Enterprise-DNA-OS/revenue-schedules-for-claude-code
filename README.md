@@ -1,115 +1,119 @@
-<h1 align="center">Revenue Schedules for Claude Code</h1>
+# Revenue Schedules for Claude Code
 
-<p align="center">
-  <strong>The open-source revenue recognition desk that is just a database and Claude Code.</strong>
-</p>
+Own the records behind your revenue review: fixed consideration, obligations, monthly schedules and accountant evidence. Free under the MIT licence. Works with Claude Code, Codex, OpenCode or Cursor.
 
-<p align="center">
-  Created by <a href="https://www.enterprisedna.co"><strong>Enterprise DNA</strong></a>. Free and open source. Works with Claude Code, Codex, OpenCode or Cursor.
-</p>
+| Do it yourself | We customise it | We run it for you |
+|---|---|---|
+| Free. Install and run the fictional demo. | Your accounting policies, exports, fields and paperwork. | Installed and operated through Omni by Enterprise DNA. One setup fee, then a retainer. |
+| [Start here](#quick-start) | [Get your version built](https://enterprisedna.co/omni/book?offer=replace-software&utm_campaign=leapfin&utm_medium=readme) | [Talk to Sam](https://enterprisedna.co/omni/book?offer=replace-software&utm_campaign=leapfin&utm_medium=readme) |
 
-<!-- three-doors -->
-<table align="center">
-  <tr>
-    <td align="center"><strong>Do it yourself</strong><br/>Clone it, run it, own it. Free, MIT.<br/><a href="#quick-start">Quick start</a></td>
-    <td align="center"><strong>We customise it</strong><br/>Your fields, your rules, your Leapfin data brought across.<br/><a href="https://enterprisedna.co/omni/book/?utm_source=github&utm_medium=readme&utm_campaign=leapfin">Book a call</a></td>
-    <td align="center"><strong>We run it for you</strong><br/>Installed, connected and operated inside Omni. Setup fee, then a retainer.<br/><a href="https://enterprisedna.co/omni/instead-of/leapfin?utm_source=github&utm_medium=readme&utm_campaign=leapfin">How it works</a></td>
-  </tr>
-</table>
+## What this replaces
 
-<p align="center">
-  <a href="#what-is-this">What is this</a> &bull;
-  <a href="#why-no-front-end">Why no front end</a> &bull;
-  <a href="#quick-start">Quick start</a> &bull;
-  <a href="#the-commands">Commands</a> &bull;
-  <a href="#instead-of-leapfin">Instead of Leapfin</a> &bull;
-  <a href="#want-it-installed-and-run-for-you">Installed for you</a> &bull;
-  <a href="#license">License</a>
-</p>
+The fixed-consideration revenue review desk: bring in source records, identify obligations, reconcile allocations, calculate monthly schedules and record the accountant's recognition review. This is a scoped alternative to part of Leapfin. It is not a billing platform, payment processor or complete accounting system.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Node-20+-339933?style=flat-square" alt="Node 20+" />
-  <img src="https://img.shields.io/badge/PostgreSQL-any-336791?style=flat-square" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/PGlite-embedded-3ecf8e?style=flat-square" alt="PGlite" />
-  <img src="https://img.shields.io/badge/License-MIT-yellow?style=flat-square" alt="MIT License" />
-</p>
-
----
-
-## What is this
-
-Revenue Schedules for Claude Code does the job you pay Leapfin for, as a Postgres database and a set of agent commands. There is no web front end. You open the folder in [Claude Code](https://claude.com/claude-code) (or Codex, OpenCode, Cursor: see `AGENTS.md`) and ask for what you want in plain language. It runs the right query, and it can answer questions the Leapfin dashboard cannot.
-
-<!-- TODO(author): the annual bill. One sentence: what a 10 to 50 person business typically pays Leapfin per year, all in, with a source. -->
-
-Want the same thing with a web front end, or built on a different stack? That is a customisation, and it is exactly what Enterprise DNA does: [book a call](https://enterprisedna.co/omni/book/?utm_source=github&utm_medium=readme&utm_campaign=leapfin).
-
-<!-- TODO(author): two or three sentences on what this specific product covers and who it is for. -->
-
-## Why no front end
-
-- The front end was only ever there because the database was hard to talk to. That is no longer true.
-- Your data sits in plain Postgres tables you own. Any tool can read them. No export, no lock-in.
-- No seats, no tiers, no add-ons. Read [docs/why-no-front-end.md](docs/why-no-front-end.md) for the honest trade-offs too.
+Leapfin lists Premium from $1,000/month, equivalent to $12,000 for twelve months; its FAQ says subscriptions are annual. The vendor page uses a dollar symbol without an explicit currency code. Confirm currency and scope in a quote. Standard is cheaper, and Enterprise is quoted privately. This is a public price, not a verified customer invoice. [Pricing](https://www.leapfin.com/pricing), checked 18 October 2026.
 
 ## Quick start
-
-Sixty seconds, no database install (an embedded Postgres runs inside Node):
 
 ```bash
 git clone https://github.com/Enterprise-DNA-OS/revenue-schedules-for-claude-code.git
 cd revenue-schedules-for-claude-code
 npm install
+npm test
 npm run demo
 ```
 
-Then open the folder in Claude Code and type a slash command. <!-- TODO(author): name the first command to try. -->
+Node 20.11 or later. The demo uses temporary fictional records and removes them afterwards. For a persistent demo, run npm run migrate then npm run seed. For real records, migrate without seeding and import into a clean database. Do not mix fictional and real accounting records.
 
-### Use it with your own Postgres or Supabase
+PGlite runs locally. DATABASE_URL selects Postgres. Use one organisation per private database and trusted operator credentials. Ordinary database roles have no default access. This base does not authenticate accountants or enforce separate preparer and approver identities. Review roles, backups, storage and retention before loading real records. Exports and generated paperwork stay private.
 
-Copy `.env.example` to `.env`, set `DATABASE_URL`, then `npm run migrate`. Same commands, shared data, no per-seat fee.
+## The weekly job
 
-## The commands
+Review new source records. Resolve unallocated consideration and missing links. Read the monthly waterfall without adding currencies together. Confirm performance evidence with the accountant, record the completed month and lock it. Draft the supporting contract memo and retain the evidence.
 
-<!-- TODO(author): a table of the slash commands in .claude/commands and what each one does. -->
+Schedules allocate every cent exactly, including partial months and leap days. Approved contract facts cannot change. A locked month rejects new schedules and recognition changes. Incorrect recognition records can be voided with a reason before locking, and remain in history. No command posts a journal or moves money.
 
-| Command | What it does |
+## Commands
+
+| Command | Job |
 |---|---|
-| `/...` | ... |
+| /contract-review | Read current contract review records. |
+| /obligations | Read current obligations records. |
+| /revenue-waterfall | Read current revenue waterfall records. |
+| /recognition-due | Read current recognition due records. |
+| /source-inbox | Read current source inbox records. |
+| /retention-review | Read current retention review records. |
+| /periods | Read current periods records. |
+| /recognitions | Read current recognitions records. |
+| /attention | Read current attention records. |
+| /compliance | Read current compliance records. |
+| /notes | Read current notes records. |
+| /history | Read current history records. |
+| /weekly-review | Read current weekly review records. |
+| /insights | Read current insights records. |
+| /contract | Read one contract, its obligations, schedule and notes. |
+| /add | Add a verified contract, obligation or note from a JSON file. |
+| /log | Record a contract review note. |
+| /approve-contract | Record the accountant assessment after allocations reconcile. |
+| /record-period | Record the completed month after evidence review. |
+| /void-recognition | Void an incorrect review record with a reason. |
+| /lock-period | Lock a fully reviewed month. |
+| /review-contract | Record a review and set its next date. |
+| /retain-evidence | Extend the evidence retention date. |
+| /draft-weekly-review | Draft the Monday review from three current reports. |
+| /draft-contract-memo | Draft a contract assessment fact pack. |
+| /draft-recognition-review | Draft the completed-month recognition review. |
+| /import | Import Leapfin accounting records into the source inbox. |
+| /export | Export all records and their change history. |
+| /view | Render private read-only dashboards. |
+| /documents | Render branded contract, schedule and retention documents. |
+| /customise | Change a field, rule or report with a reviewed migration. |
+| /new-view | Add a read-only report from the existing records. |
 
-## Instead of leapfin
+All reads support --json. Source IDs, UUID prefixes and case-insensitive names work. Ambiguous names list candidates and exit 1. [CLI reference](docs/cli.md).
 
-<!-- TODO(author): how to bring data across from Leapfin; link docs/replace-leapfin.md -->
+## Ten questions answered from your records
 
-## Architecture
+Leapfin documents that its accounting-record search cannot filter through linked records. These joined questions run today through insights. Leapfin's warehouse reporting can also support custom analysis; this is not a claim that its whole platform cannot answer them.
 
-```
-revenue-schedules-for-claude-code/
-  CLAUDE.md                 how the operator wants this run (routing table + house rules)
-  AGENTS.md                 the same, for Codex / OpenCode / Cursor / Gemini CLI
-  .claude/commands/         the slash commands
-  scripts/                  the CLI the commands drive
-  scripts/lib/db.mjs        one adapter: DATABASE_URL (pg) or embedded PGlite
-  supabase/migrations/      plain SQL schema
-  supabase/seed.sql         demo data
-  docs/                     the thesis and the migration guide
-```
+1. Which contracts have an allocation gap and an overdue review?
+2. Which approved contracts have past revenue awaiting review?
+3. Which imported line items have no obligation linked to them?
+4. Which owners have both overdue reviews and pending revenue?
+5. Which customers have contracts in more than one currency?
+6. Which point-in-time obligations await a completed-month review?
+7. Which approved contracts have short evidence retention dates?
+8. Which draft obligations are already in past reporting months?
+9. How much allocated consideration remains unrecorded by contract?
+10. Which contracts have notes and outstanding allocation gaps?
 
-## Built for coding agents
+## Your first hour: ten things to ask for
 
-The database, CLI and command recipes work with Claude Code, Codex, OpenCode or Cursor. Ask your coding agent for a new command and have it implement and test the change against the same records.
+1. Show the allocation gaps.
+2. Find the contracts with overdue reviews.
+3. Which source lines have not been linked to an obligation?
+4. Show completed months waiting for recognition review.
+5. Separate the revenue waterfall by currency.
+6. Draft a contract assessment from the recorded evidence.
+7. Put our name and logo on the schedule documents.
+8. Test our Leapfin export and show the retained fields.
+9. Add a service category and group the monthly review by it.
+10. Change the review cadence to our approved policy.
 
-## Contributing
+## Bring your records
 
-Issues and pull requests are welcome. Keep the shape: plain SQL, a small CLI, a slash command per recurring job, no front end.
+One import command loads supported Leapfin contract and line-item CSV exports, or a JSON array using its documented record model, into the source inbox. Mapping handles different headings. Full payloads stay preserved. Changed rows fail instead of silently overwriting history. An accountant then enters the working contract, links obligations and approves the basis. [Switch guide](docs/replace-leapfin.md).
 
-## Want it installed and run for you?
+## Documents and views
 
-Enterprise DNA installs Revenue Schedules for Claude Code for your business, migrates your Leapfin data, connects it to the rest of your tools, and runs it for you as part of **Omni**, our managed Command Center. One setup fee, then a monthly retainer.
+npm run docs creates contract assessment memos, revenue schedule records and evidence retention reviews. npm run view creates the week, waterfall and attention pages. Set brand.json once for your business name, logo and colours. Output is read-only HTML, printable to PDF, with no server or editing screen.
 
-- Book a call: [enterprisedna.co/omni/book](https://enterprisedna.co/omni/book/?offer=replace-software&utm_source=github&utm_medium=readme&utm_campaign=leapfin)
-- Read more: [enterprisedna.co/omni/instead-of/leapfin](https://enterprisedna.co/omni/instead-of/leapfin?utm_source=github&utm_medium=readme&utm_campaign=leapfin)
+## Accounting scope
 
-## License
+Only fixed consideration with accountant-selected daily or point recognition is included. The base does not calculate standalone selling price allocations, tax, variable consideration, modifications or foreign exchange. It does not infer recognition from imported invoices. Remaining allocated consideration is not a cash, receivable or deferred revenue balance. The accountant confirms the applicable standard and evidence. [Checks and cited rules](docs/compliance.md).
 
-MIT. Copyright (c) 2026 Enterprise DNA.
+npm test uses isolated storage and checks exact cents, leap days, rollback, immutable history, locked periods, imports, role access, every CLI route, documents and views. CI is configured for Linux and Windows with Node 20 and 22. A workflow file does not prove a Windows run occurred.
+
+## Licence
+
+MIT. Copyright 2026 Enterprise DNA. Leapfin is its owner's trademark. This independent project is not affiliated with or endorsed by Leapfin or Airwallex.

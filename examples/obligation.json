@@ -1,0 +1,12 @@
+{
+  "source_id": "example-obligation",
+  "name": "Annual access",
+  "contract_id": "example-contract",
+  "source_record_id": "sample:line-item:line-101",
+  "amount_cents": 120000,
+  "method": "daily",
+  "starts_on": "2026-01-01",
+  "ends_on": "2026-12-31",
+  "basis": "Fixed consideration allocated to one distinct stand-ready obligation; accountant to confirm",
+  "evidence": "Example signed agreement, replace with real evidence"
+}
